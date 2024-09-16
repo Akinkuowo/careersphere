@@ -65,7 +65,9 @@ export const Header = () => {
                 {/* sign in */}
                 <SignedOut>
                     <Button className="bg-sky-400" asChild>
-                        <SignInButton />
+                        <Link href="/signup">
+                            Sign Up
+                        </Link>
                     </Button>
                 </SignedOut>
             </div>
