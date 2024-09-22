@@ -1,4 +1,5 @@
 "use client"
+import { createPostAction } from "@/actions/createPostAction"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useUser } from "@clerk/nextjs"
@@ -25,7 +26,7 @@ export const PostForm = () => {
 
         setPreview(null)
         try{
-
+            await createPostAction(formData)
         }catch (error){
             toast.error("Error creating post", {
                 style: {
