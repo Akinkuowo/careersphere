@@ -82,10 +82,19 @@ export const PostForm = () => {
                     hidden
                     onChange={handleImageChange}
                 />
-
-                <button type="submit" hidden>
-                    POST
-                </button>
+                 <Button 
+                        type="button" 
+                        className="bg-sky-400"
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <ImageIcon 
+                            className="mr-2" 
+                            size={16} 
+                            color="currentColor"
+                        />
+                        {preview ? "Change Image" : "Add Image"}
+                </Button>
+                
 
                 </div>
 
@@ -102,17 +111,8 @@ export const PostForm = () => {
                 )}
 
                 <div className="flex justify-end space-x-2 mt-2">
-                    <Button 
-                        type="button" 
-                        className="bg-sky-400"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        <ImageIcon 
-                            className="mr-2" 
-                            size={16} 
-                            color="currentColor"
-                        />
-                        {preview ? "Change Image" : "Add Image"}
+                    <Button type="submit" className="bg-sky-400 w-full">
+                        POST
                     </Button>
                     {preview && (
                         <Button 
