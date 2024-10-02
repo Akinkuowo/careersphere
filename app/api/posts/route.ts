@@ -44,7 +44,7 @@ export async function GET(request: Request) {
         await connectDb(); // Connect to the database
         console.log("Connected to DB");
         const posts = await Post.getAllPosts(); // Fetch all posts
-        console.log("Posts retrieved:", posts);
+        
 
         // Return posts as JSON
         return NextResponse.json({ posts });

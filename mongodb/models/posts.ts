@@ -35,7 +35,13 @@ interface IPostStatics {
 export interface IpostDocument extends Ipost, IpostMethods {} 
 
 // Model interface
-interface IPostModel extends IPostStatics, Model<IpostDocument>{}
+interface IPostModel extends IPostStatics, Model<IpostDocument>{
+    commentOnPost(comment: IcommentBase): unknown;
+    getAllComments(): unknown;
+    likePost(id: string): unknown;
+    likes: any;
+    removePost(): unknown;
+}
 
 // Mongoose Schema for Post
 const PostSchema = new Schema<IpostDocument>(

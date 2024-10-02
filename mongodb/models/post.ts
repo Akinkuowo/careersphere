@@ -24,6 +24,7 @@ interface IpostMethods {
   commentOnPost(comment: IcommentBase): Promise<void>;
   getAllComments(): Promise<Icomment[]>;
   removeComment(commentId: string): Promise<void>;
+
 }
 
 // Static methods for the Post model
@@ -32,10 +33,16 @@ interface IPostStatics {
 }
 
 // Export singular instance of a post
-export interface IpostDocument extends Ipost, IpostMethods {}
+export interface IpostDocument extends Ipost, IpostMethods {
+  removePost(): unknown;
+}
 
 // Model interface
-interface IPostModel extends IPostStatics, Model<IpostDocument> {}
+interface IPostModel extends IPostStatics, Model<IpostDocument> {
+    removePost(): unknown;
+    likes: any;
+    likePost(id: string): unknown;
+}
 
 // Mongoose Schema for Post
 const PostSchema = new Schema<IpostDocument>(
@@ -74,6 +81,9 @@ const PostSchema = new Schema<IpostDocument>(
 
 // Instance Methods
 PostSchema.methods.likePost = async function (userId: string) {
+  if (this.likes.includes(userId)) {
+    throw new Error('User has already liked this post');
+  }
   try {
     await this.updateOne({ $addToSet: { likes: userId } });
   } catch (error) {
@@ -90,10 +100,15 @@ PostSchema.methods.unlikePost = async function (userId: string) {
 };
 
 PostSchema.methods.removePost = async function () {
+  // try {
+  //   await this.deleteOne({ _id: this._id }); // Use this.constructor to access the model
+  // } catch (error) {
+  //   throw new Error('Failed to remove Post');
+  // }
   try {
-    await this.deleteOne({ _id: this._id }); // Use this.constructor to access the model
+    await this.deleteOne();
   } catch (error) {
-    throw new Error('Failed to remove Post');
+    throw new Error('Failed to remove post');
   }
 };
 

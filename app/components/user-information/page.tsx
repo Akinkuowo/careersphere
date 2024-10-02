@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 
 
@@ -44,9 +45,9 @@ export const UserInformation = async () => {
                 </div>
 
                 <Button asChild className="bg-sky-400 text-white">
-                    <SignInButton>
+                    <Link href="/signin">
                         Sign In
-                    </SignInButton>
+                    </Link>
                 </Button>
              </SignedOut>
 

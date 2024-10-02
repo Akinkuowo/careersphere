@@ -26,7 +26,8 @@ export const PostForm = () => {
 
         setPreview(null)
         try{
-            await createPostAction(formData)
+           const response = await createPostAction(formData)
+           console.log(response)
         }catch (error){
             toast.error("Error creating post", {
                 style: {

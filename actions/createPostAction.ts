@@ -90,6 +90,7 @@ export const createPostAction = async (formData: FormData) => {
         try {
             await Post.create(body)
             return new NextResponse("Post created successfully", { status: 201 })
+            
         } catch (error) {
             console.error("An error occurred:", error)
             return new NextResponse("Failed to create post", { status: 500 })

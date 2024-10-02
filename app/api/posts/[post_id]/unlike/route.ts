@@ -28,10 +28,11 @@ import { NextResponse } from "next/server";
       }
   
 
-      await Post.likePost(user.id)
+      await post.unlikePost(user.id)
   
       return NextResponse.json({ message: "Post unliked successfully" });
     } catch (error) {
+      console.error("Error:", error); 
       return NextResponse.json(
         { error: "An error occurred while trying to unlike the post" },
         { status: 500 }

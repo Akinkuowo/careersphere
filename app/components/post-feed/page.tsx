@@ -3,12 +3,13 @@ import { Post } from "../post/page"
 
 
 export const PostFeed = ({posts}: {posts: IpostDocument[]}) => {
-    console.log(posts)
+    
+
     return(
         <div className="space-y-2 mb-20">
            {
             posts.map((post) => (
-                <Post key={post.id} post={post}/>
+                <Post key={post.id} post={post} />
             ))
            /* {posts.map((post) => (
             <Post key={post.id} post={post} />

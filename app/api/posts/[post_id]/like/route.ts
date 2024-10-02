@@ -8,7 +8,6 @@ export async function GET(
     { params }: { params: { post_id: string } }
   ) {
     await connectDb();
-  
     try {
       const post = await Post.findById(params.post_id);
   
@@ -16,10 +15,12 @@ export async function GET(
         return NextResponse.json({ error: "Post not found" }, { status: 404 });
       }
   
-      const like = Post.likes
+      const like = post.likes
+      console.log("likes", like)
       return NextResponse.json(like)
 
     } catch (error) {
+      console.error("Error:", error);
       return NextResponse.json(
         { error: "An error occurred while trying to fetch the post" },
         { status: 500 }
@@ -38,14 +39,15 @@ export async function GET(
 ) {
     const user = await currentUser();
 
+
     if (!user) {
         return new NextResponse("Unauthorized", { status: 401 });
     }    
 
     await connectDb();
-
     try {
       const post = await Post.findById(params.post_id);
+      console.log(params.post_id)
   
       if (!post) {
         return NextResponse.json({ error: "Post not found" }, { status: 404 });
@@ -54,10 +56,11 @@ export async function GET(
   
       // Delete the post
       // await Post.findByIdAndDelete(params.post_id);
-      await Post.likePost(user.id)
-  
+      await post.likePost(user.id)
+      
       return NextResponse.json({ message: "Post liked successfully" });
     } catch (error) {
+      console.error("Error:", error);
       return NextResponse.json(
         { error: "An error occurred while trying to like the post" },
         { status: 500 }

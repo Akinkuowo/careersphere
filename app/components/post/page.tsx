@@ -1,19 +1,61 @@
 "use client"
 
-import DeletePostAction from "@/actions/deletePostAction"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { IpostDocument } from "@/mongodb/models/post"
 import { useUser } from "@clerk/nextjs"
 import { Trash2Icon } from "lucide-react"
+import { revalidatePath } from "next/cache"
+import React, { useState } from "react"
 import ReactTimeago from "react-timeago"
+import { PostOptions } from "../post-options/page"
+import toast from "react-hot-toast"
+
 
 export const Post = ({ post }: { post: IpostDocument }) => {
   const { user } = useUser()
 
   // Check if the current logged-in user is the author of the post
   const isOwner = user?.id === post.user.userId
+
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleDelete = async () => {
+    setIsDeleting(true)
+    // setError(null)
+
+    try {
+      const response = await fetch(`/api/posts/${post._id}/delete`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setError("Failed to delete post. Please try again."); // Set error state for feedback
+        toast.error("An error occurs while trying to delete the post", {
+          style: {
+            borderRadius: "10px",
+            background: "#333",
+            color: "#fff",
+          }})
+      } else {
+        toast.success("post deleted Successfully", {
+          style: {
+            borderRadius: "10px",
+            background: "#333",
+            color: "#fff",
+          }})
+        // Call the onDelete prop to refresh the posts or handle UI update
+        location.reload(); // Alternatively, you can refresh the entire page
+      }
+    } catch (error) {
+      
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <div className="bg-white rounded-md border">
@@ -38,28 +80,45 @@ export const Post = ({ post }: { post: IpostDocument }) => {
               )}
             </p>
             <p className="text-xs text-gray-400">
-              @{post.user.firstname}
-              {post.user.firstname}-{post.user.userId.toString().slice(-4)}
+              @{post.user.firstname}-{post.user.userId.toString().slice(-4)}
             </p>
             <p className="text-xs text-gray-400">
               <ReactTimeago date={new Date(post.createdAt)} />
             </p>
           </div>
-            {isOwner && (
-                <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                        const promise = DeletePostAction(post._id)
-                    }}
-                >
-                    <Trash2Icon />
-                </Button>
-            )}
-
+          {isOwner && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              <Trash2Icon />
+              {isDeleting && <span className="ml-2">Deleting...</span>}
+            </Button>
+          )}
         </div>
       </div>
+      
+      <div>
+          <p className="px-4 pb-2 mt-2">{post.text}</p>
+          {
+            post.imageUrl && (
+              <img
+                src={post.imageUrl}
+                alt="Post Image"
+                width={500}
+                height={500}
+                className="w-full mx-auto"
+              />
+            )
+          }
+      </div>
+
+      <PostOptions 
+        post={post}
+      />
+
     </div>
   )
 }
-
