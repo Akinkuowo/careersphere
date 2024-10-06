@@ -2,6 +2,141 @@ import { Icomment, IcommentBase, Comment } from '@/types/comments';
 import { IUser } from '@/types/user';
 import mongoose, { Schema, Document, models, Model } from 'mongoose';
 
+// Define IMessageBase interface for the base structure of a message
+export interface IMessageBase {
+  senderId: string;
+  receiverId: string;
+  text: string;
+  createdAt: Date;
+}
+
+// Extend IMessageBase to add Mongoose-specific fields like createdAt and updatedAt
+export interface IMessage extends IMessageBase, Document {
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Custom methods for the Message model
+interface IMessageMethods {
+  sendMessage(): Promise<void>;
+}
+
+// Static methods for the Message model
+interface IMessageStatics {
+  getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]>;
+}
+
+// Export singular instance of a message
+export interface IMessageDocument extends IMessage, IMessageMethods {}
+
+// Model interface
+interface IMessageModel extends IMessageStatics, Model<IMessageDocument> {}
+
+// Mongoose Schema for Message
+const MessageSchema = new Schema<IMessageDocument>(
+  {
+    senderId: {
+      type: String,
+      required: true,
+    },
+    receiverId: {
+      type: String,
+      required: true,
+    },
+    text: {
+      type: String,
+      required: true,
+    }, // Message text
+  },
+  {
+    timestamps: true, // Automatically add createdAt and updatedAt
+  }
+);
+
+// Instance Methods
+MessageSchema.methods.sendMessage = async function () {
+  try {
+    await this.save();
+  } catch (error) {
+    throw new Error("Failed to send message");
+  }
+};
+
+// Static Methods
+MessageSchema.statics.getMessages = async function (
+  senderId: string,
+  receiverId: string
+): Promise<IMessageDocument[]> {
+  try {
+    return await this.find({
+      $or: [
+        { senderId: senderId, receiverId: receiverId },
+        { senderId: receiverId, receiverId: senderId },
+      ],
+    }).sort({ createdAt: 1 }); // Sort by createdAt to keep conversation in order
+  } catch (error) {
+    throw new Error("Failed to fetch messages");
+  }
+};
+
+// Index on createdAt for better performance
+MessageSchema.index({ createdAt: -1 });
+
+// Check if the model already exists, otherwise define it
+export const Message =
+  (models.Message as IMessageModel) ||
+  mongoose.model<IMessageDocument, IMessageModel>("Message", MessageSchema);
+
+  // Define IContactBase interface for the base structure of a contact
+  export interface IContactBase {
+    userId: string; // ID of the user who has this contact
+    contactId: string; // ID of the contact
+    firstName: string; // First name of the contact
+    lastName: string; // Last name of the contact
+    imageUrl: string; // Image URL of the contact
+  }
+  
+  // Extend IContactBase to add Mongoose-specific fields
+  export interface IContact extends IContactBase, Document {
+    createdAt: Date;
+    updatedAt: Date;
+  }
+  
+  // Model interface
+  interface IContactModel extends Model<IContact> {}
+  
+  // Mongoose Schema for Contact
+  const ContactSchema = new Schema<IContact>(
+    {
+      userId: {
+        type: String,
+        required: true,
+      },
+      contactId: {
+        type: String,
+        required: true,
+      },
+      firstName: { // Store contact's first name
+        type: String,
+        required: true,
+      },
+      lastName: { // Store contact's last name
+        type: String,
+        required: true,
+      },
+      imageUrl: { // Store contact's image URL
+        type: String,
+        required: true,
+      },
+    },
+    {
+      timestamps: true, // Automatically add createdAt and updatedAt
+    }
+  );
+  
+  // Check if the model already exists, otherwise define it
+  export const Contact = (models.Contact as IContactModel) || mongoose.model<IContact>("Contact", ContactSchema);
+  
 // Define IpostBase interface for the base structure of a post
 export interface IpostBase {
   user: IUser;
@@ -24,7 +159,6 @@ interface IpostMethods {
   commentOnPost(comment: IcommentBase): Promise<void>;
   getAllComments(): Promise<Icomment[]>;
   removeComment(commentId: string): Promise<void>;
-
 }
 
 // Static methods for the Post model
@@ -39,9 +173,9 @@ export interface IpostDocument extends Ipost, IpostMethods {
 
 // Model interface
 interface IPostModel extends IPostStatics, Model<IpostDocument> {
-    removePost(): unknown;
-    likes: any;
-    likePost(id: string): unknown;
+  removePost(): unknown;
+  likes: any;
+  likePost(id: string): unknown;
 }
 
 // Mongoose Schema for Post
@@ -100,11 +234,6 @@ PostSchema.methods.unlikePost = async function (userId: string) {
 };
 
 PostSchema.methods.removePost = async function () {
-  // try {
-  //   await this.deleteOne({ _id: this._id }); // Use this.constructor to access the model
-  // } catch (error) {
-  //   throw new Error('Failed to remove Post');
-  // }
   try {
     await this.deleteOne();
   } catch (error) {

@@ -49,6 +49,55 @@ export const PostOptions = ({ post }: { post: IpostDocument }) => {
     fetchLikes();
   }, [post._id, userId]);
 
+  const handleMessageClick = async () => {
+    if (!userId) {
+      toast.error("You need to be logged in to message this user.", {
+        style: {
+          borderRadius: "10px",
+          background: "#333",
+          color: "#fff",
+        },
+      });
+      router.push(`/`); // Redirect to login or homepage
+      return;
+    }
+  
+    try {
+      // Send a request to add the post author to the user's contact list
+      
+      const response = await fetch(`/api/contact/`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: post.user.userId,
+          firstName: post.user.firstname,
+          lastName: post.user.lastname,
+          imageUrl: post.user.userImage,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to add contact");
+      }
+  
+      // Navigate to message page, passing author ID as a query parameter
+      router.push(`/message/${post.user.userId}`);
+    } catch (error) {
+      console.error("Failed to add contact", error);
+      toast.error("Failed to add contact. Please try again later.", {
+        style: {
+          borderRadius: "10px",
+          background: "#333",
+          color: "#fff",
+        },
+      });
+    }
+  };
+  
+
+
   const likeOrUnlikePost = async () => {
     if (!userId) {
       toast.error("You can't like this post without being logged in.", {
@@ -147,7 +196,7 @@ export const PostOptions = ({ post }: { post: IpostDocument }) => {
           repost
         </Button>
 
-        <Button variant="ghost" className="postButton">
+        <Button variant="ghost" className="postButton" onClick={handleMessageClick}>
           <Send className="mr-1" />
           Message
         </Button>

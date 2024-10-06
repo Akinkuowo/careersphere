@@ -1,6 +1,7 @@
 import connectDb from "@/mongodb/db";
 import Post from "@/mongodb/models/post";
 import { IcommentBase } from "@/types/comments";
+import { IUser } from "@/types/user";
 import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
@@ -30,7 +31,8 @@ export async function GET(
 }
 
 // POST: Add a comment to a specific post
-export interface CommentPostBodyRequest {
+export interface AdddCommentRequestBody {
+  user: IUser,
   text: string;
 }
 
@@ -38,16 +40,16 @@ export async function POST(
   request: Request,
   { params }: { params: { post_id: string } }
 ) {
-  const user = await currentUser();
+  const LoggedInuser = await currentUser();
 
-  if (!user) {
+  if (!LoggedInuser) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
   await connectDb();
 
   // Extract comment text from the request body
-  const { text }: { text: string } = await request.json();
+  const { user, text }: AdddCommentRequestBody = await request.json();
 
   try {
     const post = await Post.findById(params.post_id);
@@ -59,9 +61,9 @@ export async function POST(
     // Create a new comment object
     const comment: IcommentBase = {
       user: {
-          userId: user.id,
-          userImage: user.imageUrl || "",
-          firstname: user.firstName || "unknown"
+          userId: LoggedInuser.id,
+          userImage: LoggedInuser.imageUrl || "",
+          firstname: LoggedInuser.firstName || "unknown"
       },
       text
     };
