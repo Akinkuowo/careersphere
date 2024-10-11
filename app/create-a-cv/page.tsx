@@ -7,11 +7,11 @@ import toast from "react-hot-toast";
 // Define the types for the props and state
 interface Skill {
   name: string;
-  proficiency: string;
+  proficiency: "Beginner" | "Intermediate" | "Advanced"; // Enum values
 }
 
 interface CVFormProps {
-  setCvData: (data: any) => void; // Update 'any' to a more specific type if possible
+  setCvData: (data: any) => void;
 }
 
 const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
@@ -24,7 +24,6 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
   const { userId } = useAuth();
   
   const [cvData, setCvDataLocal] = useState<any>(null);
-  console.log(cvData);
 
   const [education, setEducation] = useState({
     institution: "",
@@ -32,26 +31,29 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
     fieldOfStudy: "",
     startDate: "",
     endDate: "",
+    description: "",
   });
 
   const [position, setPosition] = useState({
-    jobTitle: "",
-    jobType: "",
+    position: "",
     company: "",
-    years: "",
+    startDate: "",
+    endDate: "",
+    description: "",
   });
 
   const [services, setServices] = useState({
-    serviceOffered: "",
-    duration: "",
+    title: "",
+    description: "",
   });
 
   const [careerBreak, setCareerBreak] = useState({
     reason: "",
-    duration: "",
+    startDate: "",
+    endDate: "",
   });
 
-  const [skills, setSkills] = useState<Skill[]>([{ name: "", proficiency: "" }]);
+  const [skills, setSkills] = useState<Skill[]>([{ name: "", proficiency: "Beginner" }]);
 
   useEffect(() => {
     if (userId) {
@@ -59,22 +61,47 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
         try {
           const response = await fetch(`/api/cv?userId=${userId}`);
           const data = await response.json();
-          if (data) {
-            setCvDataLocal(data);
-            setEducation(data.education || {});
-            setPosition(data.position || {});
-            setServices(data.services || {});
-            setCareerBreak(data.careerBreak || {});
-            setSkills(data.skills || [{ name: "", proficiency: "" }]);
+          
+          if (response.ok && data) {
+            setCvDataLocal(data); // Set the CV data if found
+            setEducation(data.education && data.education.length > 0 ? data.education[0] : {
+                institution: "",
+                degree: "",
+                fieldOfStudy: "",
+                startDate: "",
+                endDate: "",
+                description: "",
+            });
+            setPosition(data.workExperience && data.workExperience.length > 0 ? data.workExperience[0] : {
+                position: "",
+                company: "",
+                startDate: "",
+                endDate: "",
+                description: "",
+            });
+            setServices(data.services && data.services.length > 0 ? data.services[0] : {
+                title: "",
+                description: "",
+            });
+            setCareerBreak(data.careerBreak && data.careerBreak.length > 0 ? data.careerBreak[0] : {
+                reason: "",
+                startDate: "",
+                endDate: "",
+            });
+            setSkills(data.skills || [{ name: "", proficiency: "Beginner" }]);
+          } else if (data.message === 'CV not found') {
+            setCvDataLocal(null); // No CV exists
+            // Initialize with default values (already done via useState)
+          } else {
+            // Handle other errors
+            toast.error(data.message || "Failed to fetch CV data", {
+              style: { borderRadius: "10px", background: "#333", color: "#fff" },
+            });
           }
         } catch (error) {
           console.error("Failed to fetch CV data:", error);
           toast.error("Failed to fetch CV data", {
-            style: {
-              borderRadius: "10px",
-              background: "#333",
-              color: "#fff",
-            },
+            style: { borderRadius: "10px", background: "#333", color: "#fff" },
           });
         }
       };
@@ -82,7 +109,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
     }
   }, [userId]);
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>, section: string) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, section: string) => {
     const { name, value } = e.target;
     switch (section) {
       case "education":
@@ -124,15 +151,36 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
     }
   };
 
-  const handleSkillChange = (e: ChangeEvent<HTMLInputElement>, index: number) => {
-    const { name, value } = e.target;
-    const newSkills = [...skills];
-    newSkills[index][name as keyof Skill] = value;
-    setSkills(newSkills);
-  };
+  type SkillField = "name" | "proficiency";
+
+const handleSkillChange = (
+  e: ChangeEvent<HTMLSelectElement | HTMLInputElement>, 
+  index: number
+) => {
+  const { name, value } = e.target;
+  const newSkills = [...skills];
+
+  // Type assertion for name
+  const fieldName = name as SkillField;
+
+  if (fieldName === "proficiency") {
+    // Ensure value is one of the allowed proficiency levels
+    if (["Beginner", "Intermediate", "Advanced"].includes(value)) {
+      newSkills[index][fieldName] = value as Skill["proficiency"];
+    } else {
+      console.error("Invalid proficiency level:", value);
+    }
+  } else if (fieldName === "name") {
+    // For the name field, directly assign the value
+    newSkills[index][fieldName] = value; // This is safe because 'name' is of type string
+  }
+
+  setSkills(newSkills);
+};
+
 
   const addSkill = () => {
-    setSkills([...skills, { name: "", proficiency: "" }]);
+    setSkills([...skills, { name: "", proficiency: "Beginner" }]);
   };
 
   const removeSkill = (index: number) => {
@@ -141,25 +189,35 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
+    console.log("Submitting form...");
 
+    // Validate all required fields
     if (
       !education.institution ||
-      !position.jobTitle ||
-      !services.serviceOffered ||
+      !education.degree ||
+      !education.fieldOfStudy ||
+      !education.startDate ||
+      !position.position ||
+      !position.company ||
+      !position.startDate ||
+      !services.title ||
+      !services.description ||
+      !careerBreak.reason ||
+      !careerBreak.startDate ||
       skills.some(skill => !skill.name || !skill.proficiency)
     ) {
       toast.error("Please fill in all required fields.", {
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#333", color: "#fff" },
       });
       return;
     }
 
+    // Ensure dates are properly formatted
+    // Depending on your backend expectations, you may need to convert strings to ISO dates or similar
+    // Here, assuming backend can handle date strings
+
     const cvPayload = {
-      cvId: userId,
+      userId, // Correct field name
       education: [education],
       workExperience: [position],
       services: [services],
@@ -168,45 +226,33 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
     };
 
     try {
+      const method = cvData ? 'PUT' : 'POST'; // Use PUT if CV exists, otherwise POST
       const response = await fetch('/api/cv', {
-        method: cvData === null ? 'POST' : 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cvPayload),
       });
 
       if (response.ok) {
         const data = await response.json();
-        setCvData(data);
+        setCvData(data.cv); // Update parent state with the CV object
+        setCvDataLocal(data.cv); // Update local state
         toast.success("CV saved successfully!", {
-          style: {
-            borderRadius: "10px",
-            background: "#333",
-            color: "#fff",
-          },
+          style: { borderRadius: "10px", background: "#333", color: "#fff" },
         });
       } else {
-        toast.error("Error saving CV", {
-          style: {
-            borderRadius: "10px",
-            background: "#333",
-            color: "#fff",
-          },
+        const errorData = await response.json();
+        toast.error(errorData.message || "Error saving CV", {
+          style: { borderRadius: "10px", background: "#333", color: "#fff" },
         });
       }
     } catch (error) {
       console.error("Error saving CV:", error);
       toast.error("Error saving CV", {
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff",
-        },
+        style: { borderRadius: "10px", background: "#333", color: "#fff" },
       });
     }
   };
-
 
   return (
     <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4">
@@ -215,6 +261,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
       <button type="button" className="bg-blue-500 text-white py-2 px-4 rounded-md mb-4">Get Started</button>
       <h2 className="font-bold mb-2">Manual Setup</h2>
 
+      {/* Education Section */}
       <div className="mb-4">
         <button type="button" onClick={() => toggleDropdown("education")} className="w-full bg-gray-200 py-2 rounded-md">
           Education
@@ -223,7 +270,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
           <div className="p-4 bg-gray-100 rounded-md">
             <input
               type="text"
-              name="institution" // Use institution instead of school
+              name="institution"
               placeholder="Institution"
               value={education.institution}
               onChange={(e) => handleChange(e, "education")}
@@ -250,6 +297,8 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
               name="startDate"
               placeholder="Start Date"
               value={education.startDate}
+              onFocus={(e) => (e.target.type = 'date')} 
+              onBlur={(e) => (e.target.type = 'text')}
               onChange={(e) => handleChange(e, "education")}
               className="w-full mb-2 p-2 border rounded"
             />
@@ -258,6 +307,15 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
               name="endDate"
               placeholder="End Date"
               value={education.endDate}
+              onFocus={(e) => (e.target.type = 'date')} 
+              onBlur={(e) => (e.target.type = 'text')}
+              onChange={(e) => handleChange(e, "education")}
+              className="w-full mb-2 p-2 border rounded"
+            />
+            <textarea
+              name="description"
+              placeholder="Description"
+              value={education.description}
               onChange={(e) => handleChange(e, "education")}
               className="w-full mb-2 p-2 border rounded"
             />
@@ -265,6 +323,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
         )}
       </div>
 
+      {/* Work Experience Section */}
       <div className="mb-4">
         <button type="button" onClick={() => toggleDropdown("position")} className="w-full bg-gray-200 py-2 rounded-md">
           Work Experience
@@ -273,17 +332,9 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
           <div className="p-4 bg-gray-100 rounded-md">
             <input
               type="text"
-              name="jobTitle"
-              placeholder="Job Title"
-              value={position.jobTitle}
-              onChange={(e) => handleChange(e, "position")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="jobType"
-              placeholder="Job Type"
-              value={position.jobType}
+              name="position"
+              placeholder="Position"
+              value={position.position}
               onChange={(e) => handleChange(e, "position")}
               className="w-full mb-2 p-2 border rounded"
             />
@@ -297,9 +348,28 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
             />
             <input
               type="text"
-              name="years"
-              placeholder="Years"
-              value={position.years}
+              name="startDate"
+              placeholder="Start Date"
+              value={position.startDate}
+              onFocus={(e) => (e.target.type = 'date')} 
+              onBlur={(e) => (e.target.type = 'text')}
+              onChange={(e) => handleChange(e, "position")}
+              className="w-full mb-2 p-2 border rounded"
+            />
+            <input
+              type="text"
+              name="endDate"
+              placeholder="End Date"
+              value={position.endDate}
+              onFocus={(e) => (e.target.type = 'date')} 
+              onBlur={(e) => (e.target.type = 'text')}
+              onChange={(e) => handleChange(e, "position")}
+              className="w-full mb-2 p-2 border rounded"
+            />
+            <textarea
+              name="description"
+              placeholder="Description"
+              value={position.description}
               onChange={(e) => handleChange(e, "position")}
               className="w-full mb-2 p-2 border rounded"
             />
@@ -307,6 +377,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
         )}
       </div>
 
+      {/* Services Section */}
       <div className="mb-4">
         <button type="button" onClick={() => toggleDropdown("services")} className="w-full bg-gray-200 py-2 rounded-md">
           Services
@@ -315,17 +386,16 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
           <div className="p-4 bg-gray-100 rounded-md">
             <input
               type="text"
-              name="serviceOffered"
-              placeholder="Service Offered"
-              value={services.serviceOffered}
+              name="title"
+              placeholder="Service Title"
+              value={services.title}
               onChange={(e) => handleChange(e, "services")}
               className="w-full mb-2 p-2 border rounded"
             />
-            <input
-              type="text"
-              name="duration"
-              placeholder="Duration"
-              value={services.duration}
+            <textarea
+              name="description"
+              placeholder="Service Description"
+              value={services.description}
               onChange={(e) => handleChange(e, "services")}
               className="w-full mb-2 p-2 border rounded"
             />
@@ -333,6 +403,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
         )}
       </div>
 
+      {/* Career Break Section */}
       <div className="mb-4">
         <button type="button" onClick={() => toggleDropdown("careerBreak")} className="w-full bg-gray-200 py-2 rounded-md">
           Career Break
@@ -349,9 +420,21 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
             />
             <input
               type="text"
-              name="duration"
-              placeholder="Duration"
-              value={careerBreak.duration}
+              name="startDate"
+              placeholder="Start Date"
+              value={careerBreak.startDate}
+              onFocus={(e) => (e.target.type = 'date')} 
+              onBlur={(e) => (e.target.type = 'text')}
+              onChange={(e) => handleChange(e, "careerBreak")}
+              className="w-full mb-2 p-2 border rounded"
+            />
+            <input
+              type="text"
+              name="endDate"
+              placeholder="End Date"
+              value={careerBreak.endDate}
+              onFocus={(e) => (e.target.type = 'date')} 
+              onBlur={(e) => (e.target.type = 'text')}
               onChange={(e) => handleChange(e, "careerBreak")}
               className="w-full mb-2 p-2 border rounded"
             />
@@ -359,6 +442,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
         )}
       </div>
 
+      {/* Skills Section */}
       <div className="mb-4">
         <button type="button" onClick={() => toggleDropdown("skills")} className="w-full bg-gray-200 py-2 rounded-md">
           Skills
@@ -366,7 +450,7 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
         {isSkillsOpen && (
           <div className="p-4 bg-gray-100 rounded-md">
             {skills.map((skill, index) => (
-              <div key={index} className="flex mb-2">
+              <div key={index} className={`flex mb-2 ${skill.name}`}>
                 <input
                   type="text"
                   name="name"
@@ -375,14 +459,16 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
                   onChange={(e) => handleSkillChange(e, index)}
                   className="w-1/2 p-2 border rounded mr-2"
                 />
-                <input
-                  type="text"
-                  name="proficiency"
-                  placeholder="Proficiency"
-                  value={skill.proficiency}
-                  onChange={(e) => handleSkillChange(e, index)}
-                  className="w-1/2 p-2 border rounded"
-                />
+                <select
+                    name="proficiency"
+                    value={skill.proficiency}
+                    onChange={(e) => handleSkillChange(e, index)}
+                    className="w-1/2 p-2 border rounded"
+                >
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                </select>
                 <button type="button" onClick={() => removeSkill(index)} className="ml-2 text-red-500">
                   Remove
                 </button>
