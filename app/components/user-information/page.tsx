@@ -33,9 +33,11 @@ export const UserInformation = async () => {
                         {user?.lastName}-{user?.id?.slice(-4)}
                     </p>
 
-                    <Button className="mt-4 bg-sky-400">
-                        Create CV
-                    </Button>
+                    <Link href="create-a-cv">
+                        <Button className="mt-4 bg-sky-400">
+                            Create CV
+                        </Button>
+                    </Link>
                 </div>
              </SignedIn>
 

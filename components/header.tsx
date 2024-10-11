@@ -44,7 +44,7 @@ export const Header = () => {
           />
           <p>Network</p>
         </Link>
-        <Link href="/" className="icon hidden md:flex hover:text-sky-500">
+        <Link href="/jobs/" className="icon hidden md:flex hover:text-sky-500">
           <Briefcase 
             className="h-5"
           />

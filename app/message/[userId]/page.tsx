@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, SignedIn } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ interface Message {
   senderId: string;
   receiverId: string;
   text: string;
-  user_Id: string;
+  userId: string;
   createdAt: Date;
   senderFirstname: string;
   senderImageUrl: string;
@@ -22,10 +22,10 @@ interface Message {
 }
 
 interface Contact {
-  contactId: any;
+  userId: string;
+  contactId: string;
   firstName: string;
   imageUrl: string;
-  user_Id: string;
   lastMessage?: string;
   lastMessageDate?: Date;
 }
@@ -41,70 +41,21 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
   const senderId = user?.id;
   const receiverId = params.userId;
 
-  useEffect(() => {
-    if (!senderId) {
-      toast.error("You need to be logged in to view messages.");
-      router.push(`/`);
-      return;
-    }
-
-    const fetchMessages = async () => {
-      if (receiverId) {
-        setLoadingMessages(true);
-        try {
-          const response = await fetch(`/api/message?senderId=${senderId}&receiverId=${receiverId}`);
-          if (!response.ok) {
-            throw new Error("Failed to fetch messages");
-          }
-          const fetchedMessages = await response.json();
-          setMessages(fetchedMessages);
-        } catch (error) {
-          console.error("Error fetching messages", error);
-          toast.error("Failed to fetch messages", {
-            style: {
-              borderRadius: "10px",
-              background: "#333",
-              color: "#fff",
-            },
-          });
-        } finally {
-          setLoadingMessages(false);
-        }
-      }
-    };
-
-    const fetchContacts = async () => {
-      setLoadingContacts(true);
+  const fetchMessages = async () => {
+    if (receiverId) {
+      setLoadingMessages(true);
       try {
-        const response = await fetch(`/api/contact`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch contacts");
-        }
-        const fetchedContacts = await response.json();
-
-        const updatedContacts = await Promise.all(
-          fetchedContacts.map(async (contact: Contact) => {
-            const lastMessageResponse = await fetch(`/api/message?senderId=${contact.user_Id}&receiverId=${senderId}`);
-            if (!lastMessageResponse.ok) {
-              throw new Error("Failed to fetch last message");
-            }
-            const lastMessages = await lastMessageResponse.json();
-            const lastMessage = lastMessages[lastMessages.length - 1];
-
-            return {
-              userId: contact.contactId,
-              firstName: contact.firstName,
-              imageUrl: contact.imageUrl,
-              lastMessage: lastMessage ? lastMessage.text : "No messages yet",
-              lastMessageDate: lastMessage ? lastMessage.createdAt : null,
-            };
-          })
+        const response = await fetch(
+          `/api/message?senderId=${senderId}&receiverId=${receiverId}`
         );
-
-        setContacts(updatedContacts);
+        if (!response.ok) {
+          throw new Error("Failed to fetch messages");
+        }
+        const fetchedMessages = await response.json();
+        setMessages(fetchedMessages);
       } catch (error) {
-        console.error("Error fetching contacts", error);
-        toast.error(`Failed to fetch contacts: ${error}`, {
+        console.error("Error fetching messages", error);
+        toast.error("Failed to fetch messages", {
           style: {
             borderRadius: "10px",
             background: "#333",
@@ -112,9 +63,63 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
           },
         });
       } finally {
-        setLoadingContacts(false);
+        setLoadingMessages(false);
       }
-    };
+    }
+  };
+
+  const fetchContacts = async () => {
+    setLoadingContacts(true);
+    try {
+      const response = await fetch(`/api/contact`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch contacts");
+      }
+      const fetchedContacts = await response.json();
+
+      const updatedContacts = await Promise.all(
+        fetchedContacts.map(async (contact: Contact) => {
+          const lastMessageResponse = await fetch(
+            `/api/message?senderId=${contact.contactId}&receiverId=${senderId}`
+          );
+          
+          if (!lastMessageResponse.ok) {
+            throw new Error("Failed to fetch last message");
+          }
+          const lastMessages = await lastMessageResponse.json();
+          const lastMessage = lastMessages[lastMessages.length - 1];
+          // console.log("last message sent", lastMessage)
+          return {
+            userId: contact.contactId,
+            firstName: contact.firstName,
+            imageUrl: contact.imageUrl,
+            lastMessage: lastMessage ? lastMessage.text : "No messages yet",
+            lastMessageDate: lastMessage ? lastMessage.createdAt : null,
+          };
+        })
+      );
+
+      setContacts(updatedContacts);
+    } catch (error) {
+      console.error("Error fetching contacts", error);
+      toast.error(`Failed to fetch contacts: ${error}`, {
+        style: {
+          borderRadius: "10px",
+          background: "#333",
+          color: "#fff",
+        },
+      });
+    } finally {
+      setLoadingContacts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!senderId) {
+      toast.error("You need to be logged in to view messages.");
+      router.push(`/`);
+      return;
+    }
 
     fetchMessages();
     fetchContacts();
@@ -152,32 +157,7 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
       setMessages((prev) => [...prev, newMessage]);
       setMessageText("");
 
-      // Check if the sender is already a contact of the receiver
-      const contactExists = contacts.some(contact => contact.contactId === senderId);
-      if (!contactExists) {
-        // If not, add sender as a contact to the receiver
-        const contactResponse = await fetch(`/api/contact`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            user_Id: receiverId,
-            contactId: senderId,
-            firstName: senderFirstname,
-            lastName: senderLastName,
-            imageUrl: senderImageUrl,
-          }),
-        });
-
-        if (!contactResponse.ok) {
-          throw new Error("Failed to add contact");
-        }
-
-        // Optionally, you can fetch updated contacts here or update the state locally
-        // const updatedContacts = await fetchContacts();
-        // setContacts(updatedContacts);
-      }
+      await fetchMessages(); // Re-fetch messages to update the conversation
     } catch (error) {
       console.error("Error sending message", error);
       toast.error("Failed to send message", {
@@ -188,8 +168,7 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
         },
       });
     }
-};
-
+  };
 
   return (
     <SignedIn>
@@ -212,11 +191,11 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
             ) : contacts.length > 0 ? (
               contacts.map((contact) => (
                 <li
-                  key={contact.user_Id}
+                  key={contact.userId}
                   className={`flex items-center p-4 hover:bg-gray-100 cursor-pointer ${
-                    contact.user_Id === receiverId ? "bg-gray-200" : ""
+                    contact.userId === receiverId ? "bg-gray-200" : ""
                   }`}
-                  onClick={() => router.push(`/message/${contact.user_Id}`)}
+                  onClick={() => router.push(`/message/${contact.userId}`)}
                 >
                   <Image
                     src={contact.imageUrl || "/default-avatar.png"}
@@ -280,18 +259,16 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
           </div>
 
           {/* Reply Input */}
-          {receiverId && senderId !== receiverId &&(
-            <div className="p-4 border-t flex items-center">
+          {receiverId && senderId !== receiverId && (
+            <div className="p-4 border-t flex items-center space-x-4">
               <input
                 type="text"
+                className="flex-grow p-2 border rounded-md"
+                placeholder="Type your message..."
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Type your message"
-                className="flex-grow border p-2 rounded-l-md"
               />
-              <Button onClick={handleSendMessage} className="rounded-r-md">
-                Send
-              </Button>
+              <Button onClick={handleSendMessage}>Send</Button>
             </div>
           )}
         </div>
