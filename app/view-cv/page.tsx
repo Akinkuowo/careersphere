@@ -40,7 +40,7 @@ const CVViewer: React.FC = () => {
       
 
       <h2 className="text-xl font-semibold mb-2">Personal Information</h2>
-      <div className="mb-4 p-2 border rounded bg-gray-100 p-5">
+      <div className="mb-4 border rounded bg-gray-100 p-5">
             <div className="flex items-center">
                 <p className="font-semibold text-blue-400 mr-5">First Name: </p>
                 <p className="text-2xl mb-2"> {user?.firstName}</p>
