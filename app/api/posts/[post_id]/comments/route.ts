@@ -49,7 +49,7 @@ export async function POST(
   await connectDb();
 
   // Extract comment text from the request body
-  const { user, text }: AdddCommentRequestBody = await request.json();
+  const { text }: AdddCommentRequestBody = await request.json();
 
   try {
     const post = await Post.findById(params.post_id);
@@ -63,7 +63,8 @@ export async function POST(
       user: {
           userId: LoggedInuser.id,
           userImage: LoggedInuser.imageUrl || "",
-          firstname: LoggedInuser.firstName || "unknown"
+          firstname: LoggedInuser.firstName || "unknown",
+          imageUrl: ""
       },
       text
     };

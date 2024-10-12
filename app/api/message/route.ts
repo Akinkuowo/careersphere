@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
+
 import connectDb from "@/mongodb/db";
 import { Contact, Message } from "@/mongodb/models/post"; // Make sure you import your Contact model
 

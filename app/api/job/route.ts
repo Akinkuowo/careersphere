@@ -2,7 +2,6 @@ import { NextResponse, NextRequest } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import connectDb from '@/mongodb/db';
-import mongoose from 'mongoose';
 import { Job } from '@/mongodb/models/post';
 import { getAuth } from '@clerk/nextjs/server';
 

@@ -1,7 +1,7 @@
 import connectDb from '@/mongodb/db';
 import Post, { IpostBase } from '@/mongodb/models/post';
 import { IUser } from '@/types/user';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { currentUser } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
 export interface AddPostRequestBody {
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
 }
 
-export async function GET(request: Request) {
+export async function GET() {
     try {
         await connectDb(); // Connect to the database
         console.log("Connected to DB");

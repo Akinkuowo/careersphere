@@ -4,7 +4,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, SignedIn } from "@clerk/nextjs";
-import { Button } from "@/components/ui/button";
 import toast from "react-hot-toast";
 
 const MessageIndexPage = () => {

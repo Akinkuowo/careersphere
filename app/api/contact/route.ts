@@ -4,7 +4,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { Contact, Message } from "@/mongodb/models/post"; 
 
 // Fetch contact list for the authenticated user
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Authenticate user
     const { userId } = auth();

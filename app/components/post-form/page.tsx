@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useUser } from "@clerk/nextjs"
 import { ImageIcon, XIcon } from "lucide-react"
+import Image from "next/image"
 import { useRef, useState } from "react"
 import toast from "react-hot-toast"
 
@@ -108,7 +109,7 @@ export const PostForm = () => {
                 {/* preview */}
                 {preview && (
                     <div className="mt-3 mb-3">
-                        <img 
+                        <Image 
                             src={preview} 
                             alt="Previewed Image" 
                             className="w-full h-60 object-cover" 

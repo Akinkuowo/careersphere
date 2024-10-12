@@ -123,7 +123,7 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
 
     fetchMessages();
     fetchContacts();
-  }, [senderId, receiverId, router]);
+  }, [senderId, receiverId, router, fetchContacts, fetchMessages]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !receiverId) {
@@ -131,7 +131,6 @@ const MessagePage = ({ params }: { params: { userId?: string } }) => {
     }
 
     const senderFirstname = user?.firstName || "";
-    const senderLastName = user?.lastName || "";
     const senderImageUrl = user?.imageUrl || "";
 
     try {

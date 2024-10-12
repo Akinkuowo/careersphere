@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button"
 import { IpostDocument } from "@/mongodb/models/post"
 import { useUser } from "@clerk/nextjs"
 import { Trash2Icon } from "lucide-react"
-import { revalidatePath } from "next/cache"
 import React, { useState } from "react"
 import ReactTimeago from "react-timeago"
 import { PostOptions } from "../post-options/page"
 import toast from "react-hot-toast"
+import Image from "next/image"
 
 
 export const Post = ({ post }: { post: IpostDocument }) => {
@@ -32,9 +32,9 @@ export const Post = ({ post }: { post: IpostDocument }) => {
       })
 
       if (!response.ok) {
-        const errorData = await response.json();
+        await response.json();
         setError("Failed to delete post. Please try again."); // Set error state for feedback
-        toast.error("An error occurs while trying to delete the post", {
+        toast.error(`An error occurs while trying to delete the post ${error}`, {
           style: {
             borderRadius: "10px",
             background: "#333",
@@ -51,7 +51,7 @@ export const Post = ({ post }: { post: IpostDocument }) => {
         location.reload(); // Alternatively, you can refresh the entire page
       }
     } catch (error) {
-      
+      console.log(error)      
     } finally {
       setIsDeleting(false)
     }
@@ -104,7 +104,7 @@ export const Post = ({ post }: { post: IpostDocument }) => {
           <p className="px-4 pb-2 mt-2">{post.text}</p>
           {
             post.imageUrl && (
-              <img
+              <Image
                 src={post.imageUrl}
                 alt="Post Image"
                 width={500}

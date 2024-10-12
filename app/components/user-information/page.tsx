@@ -31,7 +31,7 @@ export const UserInformation = () => {
                 imageUrl: user.imageUrl || '',   // Provide fallback
             });
         }
-    }, [user]);
+    }, [user?.id]);
 
     useEffect(() => {
         const fetchCV = async () => {

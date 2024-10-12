@@ -11,7 +11,7 @@ interface Skill {
 }
 
 interface CVFormProps {
-  setCvData: (data: any) => void;
+  setCvData: (data: string) => void;
 }
 
 const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {

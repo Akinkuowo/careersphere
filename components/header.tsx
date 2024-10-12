@@ -2,7 +2,6 @@ import { Briefcase, HomeIcon, MessageSquare, SearchIcon, UserIcon } from "lucide
 import Image from "next/image";
 import Link from "next/link";
 import {
-  SignInButton,
   SignedIn,
   SignedOut,
   UserButton
