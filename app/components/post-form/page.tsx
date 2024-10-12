@@ -54,7 +54,13 @@ export const PostForm = () => {
             <form 
                 ref={ref} 
                 action={formData => {
-                    handlePostAction(formData)
+                    const promise = handlePostAction(formData)
+
+                    toast.promise(promise, {
+                        loading: "Creating Post....",
+                        success: "Post created",
+                        error: "Failed to create Post"
+                    })
                 }} 
                 className="p-3 bg-white rounded-lg"
             >
