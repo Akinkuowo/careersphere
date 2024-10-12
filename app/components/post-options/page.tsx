@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 import { likePostBodyRequest } from "@/app/api/posts/[post_id]/like/route";
 import { unLikePostBodyRequest } from "@/app/api/posts/[post_id]/unlike/route";
 import { CommentForm } from "../comment-form/page";
-import { CommentFeed } from "../comment-feed/page";
+import { CommentFeed } from "../comment-feed/comment-feed";
 
 export const PostOptions = ({ post }: { post: IpostDocument }) => {
   const [likes, setLikes] = useState<string[]>([]);
