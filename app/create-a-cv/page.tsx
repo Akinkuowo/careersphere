@@ -14,7 +14,8 @@ interface CVFormProps {
   setCvData: (data: any) => void;
 }
 
-export const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
+ const CVForm = ({ setCvData
+  }: CVFormProps) => {
   const [isEducationOpen, setIsEducationOpen] = useState(false);
   const [isPositionOpen, setIsPositionOpen] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
@@ -488,4 +489,4 @@ const handleSkillChange = (
   );
 };
 
-// export default CVForm;
+export default CVForm;
