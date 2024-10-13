@@ -8,7 +8,7 @@ import { useUser } from "@clerk/nextjs"
 import { Trash2Icon } from "lucide-react"
 import React, { useState } from "react"
 import ReactTimeago from "react-timeago"
-import { PostOptions } from "../post-options/page"
+import { PostOptions } from "../post-options/post-options"
 import toast from "react-hot-toast"
 import Image from "next/image"
 
