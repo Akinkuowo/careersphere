@@ -29,7 +29,8 @@ export const createPostAction = async (formData: FormData) => {
         userId: user.id,
         userImage: user.imageUrl,
         firstname: user.firstName || "John Doe",
-        lastname: user.lastName || ""
+        lastname: user.lastName || "",
+        imageUrl: user.imageUrl
     }
 
     let imageUrl: string | undefined
