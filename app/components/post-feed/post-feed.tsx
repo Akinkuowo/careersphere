@@ -1,5 +1,5 @@
 import { IpostDocument } from "@/mongodb/models/post"
-import { Post } from "../post/page"
+import { Post } from "../post/post"
 
 
 export const PostFeed = ({posts}: {posts: IpostDocument[]}) => {

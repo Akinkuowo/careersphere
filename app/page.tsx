@@ -1,6 +1,6 @@
 import connectDb from "@/mongodb/db";
-import { PostForm } from "./components/post-form/page";
-import { UserInformation } from "./components/user-information/page";
+import { PostForm } from "./components/post-form/post-form";
+import { UserInformation } from "./components/user-information/user-information";
 import Post from "@/mongodb/models/post";
 import { SignedIn } from "@clerk/nextjs";
 import { PostFeed } from "./components/post-feed/post-feed";
