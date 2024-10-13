@@ -3,7 +3,7 @@ import { PostForm } from "./components/post-form/page";
 import { UserInformation } from "./components/user-information/page";
 import Post from "@/mongodb/models/post";
 import { SignedIn } from "@clerk/nextjs";
-import { PostFeed } from "./components/post-feed/page";
+import { PostFeed } from "./components/post-feed/post-feed";
 
 export const revalidate = 0
 
