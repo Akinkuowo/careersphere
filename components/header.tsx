@@ -18,7 +18,7 @@ export const Header = () => {
         height={100}
         className="rounded-md mr-3"
       />
-      <div className="flex-1">
+      <div className="flex-1 hidden md:block">
         <form className="flex items-center space-x-1 bg-gray-100 p-2 rounded-md flex-1 mx-2 max-w-72">
           <SearchIcon 
             className="h-4 text-gray-600"
