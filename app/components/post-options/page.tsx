@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { likePostBodyRequest } from "@/app/api/posts/[post_id]/like/route";
 import { unLikePostBodyRequest } from "@/app/api/posts/[post_id]/unlike/route";
-import { CommentForm } from "../comment-form/page";
+import { CommentForm } from "../comment-form/comment-form";
 import { CommentFeed } from "../comment-feed/comment-feed";
 
 export const PostOptions = ({ post }: { post: IpostDocument }) => {
