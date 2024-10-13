@@ -10,12 +10,19 @@ interface Skill {
   proficiency: "Beginner" | "Intermediate" | "Advanced"; // Enum values
 }
 
-interface CVFormProps {
-  setCvData: (data: any) => void;
+interface CVData {
+  education: string[];
+  workExperience: string[];
+  services: string[];
+  careerBreak: string[];
+  skills: Skill[];
 }
 
- const CVForm = ({ setCvData
-  }: CVFormProps) => {
+interface CVFormProps {
+  setCvData: (data: CVData) => void;
+}
+
+const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
   const [isEducationOpen, setIsEducationOpen] = useState(false);
   const [isPositionOpen, setIsPositionOpen] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
@@ -23,8 +30,7 @@ interface CVFormProps {
   const [isSkillsOpen, setIsSkillsOpen] = useState(false);
 
   const { userId } = useAuth();
-  
-  const [cvData, setCvDataLocal] = useState<any>(null);
+  const [cvData, setCvDataLocal] = useState<CVData | null>(null);
 
   const [education, setEducation] = useState({
     institution: "",
@@ -62,39 +68,16 @@ interface CVFormProps {
         try {
           const response = await fetch(`/api/cv?userId=${userId}`);
           const data = await response.json();
-          
+
           if (response.ok && data) {
-            setCvDataLocal(data); // Set the CV data if found
-            setEducation(data.education && data.education.length > 0 ? data.education[0] : {
-                institution: "",
-                degree: "",
-                fieldOfStudy: "",
-                startDate: "",
-                endDate: "",
-                description: "",
-            });
-            setPosition(data.workExperience && data.workExperience.length > 0 ? data.workExperience[0] : {
-                position: "",
-                company: "",
-                startDate: "",
-                endDate: "",
-                description: "",
-            });
-            setServices(data.services && data.services.length > 0 ? data.services[0] : {
-                title: "",
-                description: "",
-            });
-            setCareerBreak(data.careerBreak && data.careerBreak.length > 0 ? data.careerBreak[0] : {
-                reason: "",
-                startDate: "",
-                endDate: "",
-            });
+            setCvDataLocal(data);
+            // Initialize state with fetched data or empty object
+            setEducation(data.education[0] || { institution: "", degree: "", fieldOfStudy: "", startDate: "", endDate: "", description: "" });
+            setPosition(data.workExperience[0] || { position: "", company: "", startDate: "", endDate: "", description: "" });
+            setServices(data.services[0] || { title: "", description: "" });
+            setCareerBreak(data.careerBreak[0] || { reason: "", startDate: "", endDate: "" });
             setSkills(data.skills || [{ name: "", proficiency: "Beginner" }]);
-          } else if (data.message === 'CV not found') {
-            setCvDataLocal(null); // No CV exists
-            // Initialize with default values (already done via useState)
           } else {
-            // Handle other errors
             toast.error(data.message || "Failed to fetch CV data", {
               style: { borderRadius: "10px", background: "#333", color: "#fff" },
             });
@@ -152,33 +135,18 @@ interface CVFormProps {
     }
   };
 
-  type SkillField = "name" | "proficiency";
+  const handleSkillChange = (e: ChangeEvent<HTMLSelectElement | HTMLInputElement>, index: number) => {
+    const { name, value } = e.target;
+    const newSkills = [...skills];
 
-const handleSkillChange = (
-  e: ChangeEvent<HTMLSelectElement | HTMLInputElement>, 
-  index: number
-) => {
-  const { name, value } = e.target;
-  const newSkills = [...skills];
-
-  // Type assertion for name
-  const fieldName = name as SkillField;
-
-  if (fieldName === "proficiency") {
-    // Ensure value is one of the allowed proficiency levels
-    if (["Beginner", "Intermediate", "Advanced"].includes(value)) {
-      newSkills[index][fieldName] = value as Skill["proficiency"];
+    if (name === "proficiency") {
+      newSkills[index].proficiency = value as Skill["proficiency"];
     } else {
-      console.error("Invalid proficiency level:", value);
+      newSkills[index].name = value;
     }
-  } else if (fieldName === "name") {
-    // For the name field, directly assign the value
-    newSkills[index][fieldName] = value; // This is safe because 'name' is of type string
-  }
 
-  setSkills(newSkills);
-};
-
+    setSkills(newSkills);
+  };
 
   const addSkill = () => {
     setSkills([...skills, { name: "", proficiency: "Beginner" }]);
@@ -188,7 +156,7 @@ const handleSkillChange = (
     setSkills(skills.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e: { preventDefault: () => void }) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Submitting form...");
 
@@ -213,12 +181,8 @@ const handleSkillChange = (
       return;
     }
 
-    // Ensure dates are properly formatted
-    // Depending on your backend expectations, you may need to convert strings to ISO dates or similar
-    // Here, assuming backend can handle date strings
-
     const cvPayload = {
-      userId, // Correct field name
+      userId,
       education: [education],
       workExperience: [position],
       services: [services],
@@ -227,7 +191,7 @@ const handleSkillChange = (
     };
 
     try {
-      const method = cvData ? 'PUT' : 'POST'; // Use PUT if CV exists, otherwise POST
+      const method = cvData ? 'PUT' : 'POST'; // Use PUT if CV exists
       const response = await fetch('/api/cv', {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -243,7 +207,7 @@ const handleSkillChange = (
         });
       } else {
         const errorData = await response.json();
-        toast.error(errorData.message || "Error saving CV", {
+        toast.error(errorData.message || "Failed to save CV", {
           style: { borderRadius: "10px", background: "#333", color: "#fff" },
         });
       }
@@ -256,235 +220,93 @@ const handleSkillChange = (
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Add to Profile</h1>
-      <p className="text-gray-500 mb-4">Set up your profile in minutes with a resume</p>
-      <button type="button" className="bg-blue-500 text-white py-2 px-4 rounded-md mb-4">Get Started</button>
-      <h2 className="font-bold mb-2">Manual Setup</h2>
-
+    <form onSubmit={handleSubmit}>
       {/* Education Section */}
-      <div className="mb-4">
-        <button type="button" onClick={() => toggleDropdown("education")} className="w-full bg-gray-200 py-2 rounded-md">
-          Education
-        </button>
+      <div>
+        <h2 onClick={() => toggleDropdown("education")}>Education</h2>
         {isEducationOpen && (
-          <div className="p-4 bg-gray-100 rounded-md">
-            <input
-              type="text"
-              name="institution"
-              placeholder="Institution"
-              value={education.institution}
-              onChange={(e) => handleChange(e, "education")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="degree"
-              placeholder="Degree"
-              value={education.degree}
-              onChange={(e) => handleChange(e, "education")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="fieldOfStudy"
-              placeholder="Field of Study"
-              value={education.fieldOfStudy}
-              onChange={(e) => handleChange(e, "education")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="startDate"
-              placeholder="Start Date"
-              value={education.startDate}
-              onFocus={(e) => (e.target.type = 'date')} 
-              onBlur={(e) => (e.target.type = 'text')}
-              onChange={(e) => handleChange(e, "education")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="endDate"
-              placeholder="End Date"
-              value={education.endDate}
-              onFocus={(e) => (e.target.type = 'date')} 
-              onBlur={(e) => (e.target.type = 'text')}
-              onChange={(e) => handleChange(e, "education")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <textarea
-              name="description"
-              placeholder="Description"
-              value={education.description}
-              onChange={(e) => handleChange(e, "education")}
-              className="w-full mb-2 p-2 border rounded"
-            />
+          <div>
+            <input name="institution" value={education.institution} onChange={(e) => handleChange(e, "education")} placeholder="Institution" required />
+            <input name="degree" value={education.degree} onChange={(e) => handleChange(e, "education")} placeholder="Degree" required />
+            <input name="fieldOfStudy" value={education.fieldOfStudy} onChange={(e) => handleChange(e, "education")} placeholder="Field of Study" required />
+            <input name="startDate" value={education.startDate} onChange={(e) => handleChange(e, "education")} placeholder="Start Date" required />
+            <input name="endDate" value={education.endDate} onChange={(e) => handleChange(e, "education")} placeholder="End Date" />
+            <textarea name="description" value={education.description} onChange={(e) => handleChange(e, "education")} placeholder="Description"></textarea>
           </div>
         )}
       </div>
 
       {/* Work Experience Section */}
-      <div className="mb-4">
-        <button type="button" onClick={() => toggleDropdown("position")} className="w-full bg-gray-200 py-2 rounded-md">
-          Work Experience
-        </button>
+      <div>
+        <h2 onClick={() => toggleDropdown("position")}>Work Experience</h2>
         {isPositionOpen && (
-          <div className="p-4 bg-gray-100 rounded-md">
-            <input
-              type="text"
-              name="position"
-              placeholder="Position"
-              value={position.position}
-              onChange={(e) => handleChange(e, "position")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="company"
-              placeholder="Company"
-              value={position.company}
-              onChange={(e) => handleChange(e, "position")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="startDate"
-              placeholder="Start Date"
-              value={position.startDate}
-              onFocus={(e) => (e.target.type = 'date')} 
-              onBlur={(e) => (e.target.type = 'text')}
-              onChange={(e) => handleChange(e, "position")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="endDate"
-              placeholder="End Date"
-              value={position.endDate}
-              onFocus={(e) => (e.target.type = 'date')} 
-              onBlur={(e) => (e.target.type = 'text')}
-              onChange={(e) => handleChange(e, "position")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <textarea
-              name="description"
-              placeholder="Description"
-              value={position.description}
-              onChange={(e) => handleChange(e, "position")}
-              className="w-full mb-2 p-2 border rounded"
-            />
+          <div>
+            <input name="position" value={position.position} onChange={(e) => handleChange(e, "position")} placeholder="Position" required />
+            <input name="company" value={position.company} onChange={(e) => handleChange(e, "position")} placeholder="Company" required />
+            <input name="startDate" value={position.startDate} onChange={(e) => handleChange(e, "position")} placeholder="Start Date" required />
+            <input name="endDate" value={position.endDate} onChange={(e) => handleChange(e, "position")} placeholder="End Date" />
+            <textarea name="description" value={position.description} onChange={(e) => handleChange(e, "position")} placeholder="Description"></textarea>
           </div>
         )}
       </div>
 
       {/* Services Section */}
-      <div className="mb-4">
-        <button type="button" onClick={() => toggleDropdown("services")} className="w-full bg-gray-200 py-2 rounded-md">
-          Services
-        </button>
+      <div>
+        <h2 onClick={() => toggleDropdown("services")}>Services</h2>
         {isServicesOpen && (
-          <div className="p-4 bg-gray-100 rounded-md">
-            <input
-              type="text"
-              name="title"
-              placeholder="Service Title"
-              value={services.title}
-              onChange={(e) => handleChange(e, "services")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <textarea
-              name="description"
-              placeholder="Service Description"
-              value={services.description}
-              onChange={(e) => handleChange(e, "services")}
-              className="w-full mb-2 p-2 border rounded"
-            />
+          <div>
+            <input name="title" value={services.title} onChange={(e) => handleChange(e, "services")} placeholder="Service Title" required />
+            <textarea name="description" value={services.description} onChange={(e) => handleChange(e, "services")} placeholder="Service Description" required></textarea>
           </div>
         )}
       </div>
 
       {/* Career Break Section */}
-      <div className="mb-4">
-        <button type="button" onClick={() => toggleDropdown("careerBreak")} className="w-full bg-gray-200 py-2 rounded-md">
-          Career Break
-        </button>
+      <div>
+        <h2 onClick={() => toggleDropdown("careerBreak")}>Career Break</h2>
         {isCareerBreakOpen && (
-          <div className="p-4 bg-gray-100 rounded-md">
-            <input
-              type="text"
-              name="reason"
-              placeholder="Reason"
-              value={careerBreak.reason}
-              onChange={(e) => handleChange(e, "careerBreak")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="startDate"
-              placeholder="Start Date"
-              value={careerBreak.startDate}
-              onFocus={(e) => (e.target.type = 'date')} 
-              onBlur={(e) => (e.target.type = 'text')}
-              onChange={(e) => handleChange(e, "careerBreak")}
-              className="w-full mb-2 p-2 border rounded"
-            />
-            <input
-              type="text"
-              name="endDate"
-              placeholder="End Date"
-              value={careerBreak.endDate}
-              onFocus={(e) => (e.target.type = 'date')} 
-              onBlur={(e) => (e.target.type = 'text')}
-              onChange={(e) => handleChange(e, "careerBreak")}
-              className="w-full mb-2 p-2 border rounded"
-            />
+          <div>
+            <input name="reason" value={careerBreak.reason} onChange={(e) => handleChange(e, "careerBreak")} placeholder="Reason" required />
+            <input name="startDate" value={careerBreak.startDate} onChange={(e) => handleChange(e, "careerBreak")} placeholder="Start Date" required />
+            <input name="endDate" value={careerBreak.endDate} onChange={(e) => handleChange(e, "careerBreak")} placeholder="End Date" />
           </div>
         )}
       </div>
 
       {/* Skills Section */}
-      <div className="mb-4">
-        <button type="button" onClick={() => toggleDropdown("skills")} className="w-full bg-gray-200 py-2 rounded-md">
-          Skills
-        </button>
+      <div>
+        <h2 onClick={() => toggleDropdown("skills")}>Skills</h2>
         {isSkillsOpen && (
-          <div className="p-4 bg-gray-100 rounded-md">
+          <div>
             {skills.map((skill, index) => (
-              <div key={index} className={`flex mb-2 ${skill.name}`}>
+              <div key={index}>
                 <input
-                  type="text"
                   name="name"
-                  placeholder="Skill"
                   value={skill.name}
                   onChange={(e) => handleSkillChange(e, index)}
-                  className="w-1/2 p-2 border rounded mr-2"
+                  placeholder="Skill Name"
+                  required
                 />
                 <select
-                    name="proficiency"
-                    value={skill.proficiency}
-                    onChange={(e) => handleSkillChange(e, index)}
-                    className="w-1/2 p-2 border rounded"
+                  name="proficiency"
+                  value={skill.proficiency}
+                  onChange={(e) => handleSkillChange(e, index)}
+                  required
                 >
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
                 </select>
-                <button type="button" onClick={() => removeSkill(index)} className="ml-2 text-red-500">
-                  Remove
-                </button>
+                <button type="button" onClick={() => removeSkill(index)}>Remove Skill</button>
               </div>
             ))}
-            <button type="button" onClick={addSkill} className="mt-2 bg-green-500 text-white py-2 px-4 rounded-md">
-              Add Skill
-            </button>
+            <button type="button" onClick={addSkill}>Add Skill</button>
           </div>
         )}
       </div>
 
-      <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-md">
-        Submit
-      </button>
+      {/* Submit Button */}
+      <button type="submit">Save CV</button>
     </form>
   );
 };
