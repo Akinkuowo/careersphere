@@ -47,7 +47,7 @@ export const CommentForm = ({ postId }: { postId: string }) => {
         location.reload()
       } else {
         const errorData = await response;
-        throw new Error(errorData);
+        throw new Error(`An error occours ${errorData}`);
       }
     } catch (error) {
       toast.error(`Error creating comment: ${error}`, {

@@ -38,7 +38,8 @@ export const createCommentAction = async (postId: string, FormData: FormData) =>
         userId: user.id,
         userImage: user.imageUrl,
         firstname: user.firstName || "",
-        lastname: user.lastName || ""
+        lastname: user.lastName || "",
+        imageUrl: ""
     };
 
     const comment: IcommentBase = {
