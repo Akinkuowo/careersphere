@@ -200,8 +200,8 @@ const CVForm: React.FC<CVFormProps> = ({ setCvData }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setCvData(data.cv); // Update parent state with the CV object
-        setCvDataLocal(data.cv); // Update local state
+        setCvData(data.cv as CVData); // Update parent state with the CV object
+        setCvDataLocal(data.cv as CVData); // Update local state
         toast.success("CV saved successfully!", {
           style: { borderRadius: "10px", background: "#333", color: "#fff" },
         });
